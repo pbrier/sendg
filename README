@@ -1,0 +1,47 @@
+/*
+ * sendg.cs
+ * Send gcode to Ultimaker via serial port.
+ * (c) 2011 Peter Brier. pbrier.nl - gmail.com
+ *
+ * Requires Mono or MS C# to compile (mono-gmcs is only required to compile). For example:
+ * # sudo apt-get install mono-gmcs mono-gac mono-utils
+ * # gmcs sendg.cs
+ * # mono sendg.exe
+ *
+ * USE: sendg -d -l -c[buffercount] -p[portname] -b[baudrate] [filename]
+ * -d             Enable debugging
+ * -l             Enable logging
+ * -e             Enable build time estimation
+ * -c[n]          Set delayed ack count (1 is no delayed ack)
+ * -p[name]       Specify portname (COMx on windows, /dev/ttyAMx on linux)
+ * -b[baudrate]   Set baudrate (default is 115200)
+ * [filename]     The GCODE file to send
+ * 
+ * Best results are obtained when c>3, however, your firmware serial buffer should be large 
+ * enough to hold all these lines
+ *
+ * Two threads are used (a reader and main thread).
+ * Note: we do *NOT* use the async events of the SerialPort object.
+ * these have 'issues' on mono (one of the 'issues' is that they don't work).
+ *
+ * Upto "bufcount" lines are sent, before they are ACK-ed
+ * A semaphore is used to sync the threads.
+ * We assume all these lines fit in the 128 byte serial buffer of
+ * the arduino. An optimized version could cound the actual nr of
+ * bytes sent and ACKed to sync the reader/writer.
+ * No CRC, line-numbers or resents are implemented.
+ * Tested with standard ultimaker and sprinter firmware, 
+ * using bufcount=2
+ *
+ * sendg is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * sendg is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with sendg.  If not, see <http://www.gnu.org/licenses/>.
+ */
