@@ -116,6 +116,7 @@ namespace sendg
 			"under the terms of the GNU General Public License as published\n" + 
 			"by the Free Software Foundation\n" +
 			"\nUSE: sendg -d -l -c[buffercount] -p[portname] -b[baudrate] [filename]\n\n" +
+		  " -r             Enable realtime process priority\n" +
 		  " -d             Enable debugging (show lots of debug messages)\n" +
 		  " -l             Enable logging (show time in msec, linenr and data)\n" +
       " -e             Show built time estimation (in minutes)\n" +
@@ -137,6 +138,7 @@ namespace sendg
       int baudrate = 115200;
       int bufcount = 4; // nr of lines to buffer
       long t1=0;
+			bool realtime = false;
 			
     // Parse cmd line
 		  if ( args.Length < 1 ) 
@@ -162,6 +164,7 @@ namespace sendg
           case "d": debug = true; break;
           case "e": progress = true; break;
           case "l": log = true; break;
+					case "r": realtime = true; break;
           default:
             Console.WriteLine("SENDG: Unknown option: " + key );
 						Help();
@@ -172,7 +175,13 @@ namespace sendg
       {
         Console.WriteLine("Port: " + portname + " " + baudrate.ToString() + "bps");
         Console.WriteLine("File: " + filename + " buffer:" + bufcount.ToString ());
+				Console.WriteLine("Realtime priority: " + (realtime ? "ENABLED" : "DISABLED") );
       }
+			
+			if ( realtime ) 
+			  using (Process p = Process.GetCurrentProcess())
+			    p.PriorityClass = ProcessPriorityClass.RealTime;
+			
       try
       {
         // open port and wait for Arduino to boot
