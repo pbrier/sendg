@@ -64,7 +64,7 @@ namespace sendg
     static SerialPort port;
     static bool debug = false, log = false, progress=false, quit=false;
     static long t0 = 0;
-
+	  static TextWriter tw = null; 
     private static Stopwatch sw = Stopwatch.StartNew();
     private static long msec() { return sw.ElapsedMilliseconds; }
 
@@ -91,6 +91,11 @@ namespace sendg
           n = n.Substring (p + 1, n.Length - p - 1);
           if (s.Length > 0)
           {
+					  if ( tw != null )
+            {						
+						  tw.WriteLine((t1-t0).ToString()  + " " + s);
+							tw.Flush();
+						}
             try {
               sem.Release (1);
               recnr++;
@@ -119,6 +124,7 @@ namespace sendg
 		  " -r             Enable realtime process priority\n" +
 		  " -d             Enable debugging (show lots of debug messages)\n" +
 		  " -l             Enable logging (show time in msec, linenr and data)\n" +
+			" -t             Set timeout [msec] to wait after last line is sent (default is 6000msec)\n" +
       " -e             Show built time estimation (in minutes)\n" +
 			" -c[n]          Set delayed ack count (1 is no delayed ack, default is 4)\n" +
       " -p[name]       Specify portname (COMx on windows, /dev/ttyAMx on linux)\n" +
@@ -137,6 +143,7 @@ namespace sendg
       string filename = null;
       int baudrate = 115200;
       int bufcount = 4; // nr of lines to buffer
+			int timeout = 6000;
       long t1=0;
 			bool realtime = false;
 			
@@ -160,10 +167,11 @@ namespace sendg
         {
           case "c": Int32.TryParse (val, out bufcount); break;
           case "b": Int32.TryParse (val, out baudrate); break;
+					case "t": Int32.TryParse (val, out timeout); break;
           case "p": portname = val; break;
           case "d": debug = true; break;
           case "e": progress = true; break;
-          case "l": log = true; break;
+          case "l": log = true; tw = new StreamWriter("log.txt"); break;
 					case "r": realtime = true; break;
           default:
             Console.WriteLine("SENDG: Unknown option: " + key );
@@ -253,11 +261,14 @@ namespace sendg
             }
           }
         }
-      
+      tw.Close();
     // Wait for the last line to complete (1sec fixed time) and abort thread
+		  for(int i=0; i<bufcount-1;i++)
+			  sem.WaitOne();
+		
       long e = msec() - t0;
       quit = true;
-      Thread.Sleep (1000);
+      Thread.Sleep (timeout);
       port.Close ();
       r.Abort ();
       Console.WriteLine ("Toal time: " + e.ToString () + " msec");
